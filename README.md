@@ -1,7 +1,7 @@
 # -EoI-classification
 classification workflow with tcrkit
 
-![alt text](https://github.com/[swannsz]/[-EoI-classification]/blob/[main]/ml_strategie.png?raw=true)
+![pipeline complète](ml_strategie.png)
 
 Elements à garder consistant :
 nom des folders gliph
