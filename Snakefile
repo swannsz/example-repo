@@ -56,6 +56,26 @@ rule create_folders:
         python {input.script} --config {params.config_path} > {log} 2>&1
         """
 
+rule clean_gliph_configs:
+    """
+    Step 1.5: Clean GLIPH2 config files by removing directory prefixes
+    This must happen after folders are created but before GLIPH2 runs
+    """
+    input:
+        script="clean_gliph_config.py",
+        folder_marker="folders_created.done"
+    output:
+        touch("gliph_fold_{fold}/config_cleaned_{fold}.done")
+    params:
+        fold="{fold}",
+        condition=TCRKIT_CONDITION
+    log:
+        "logs/clean_config_fold_{fold}.log"
+    shell:
+        """
+        python {input.script} --fold {params.fold} --condition {params.condition} > {log} 2>&1
+        """
+
 rule run_gliph2_clustering:
     """
     Step 2: Run GLIPH2 clustering in each fold directory
@@ -67,7 +87,8 @@ rule run_gliph2_clustering:
     Each job runs in its own gliph_fold_X directory
     """
     input:
-        folder_marker="folders_created.done"
+        folder_marker="folders_created.done",
+        config_cleaned="gliph_fold_{fold}/config_cleaned_{fold}.done"  # NEW: depends on cleaned config
     output:
         cluster="gliph_fold_{fold}/gliph_fold_{fold}_cluster.csv"
     params:
