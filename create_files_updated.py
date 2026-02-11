@@ -110,6 +110,285 @@ def load_metadata(
         )
     
     return df_sample
+
+def load_labels(
+    file: str,
+    separator: str = ',',
+    filter_cell_subset: bool = True,
+    subject_column: str = 'subject_id',
+    disease_label_column: str = 'seroconversion',
+    cell_subset_type: str = 'CD8',
+    cell_subset_column: str = 'cell_subset',
+    disease_label: Optional[str] = None
+) -> Tuple[pd.Series, pd.Series]:
+    """
+    Load subject IDs and disease labels for train/test splitting.
+    
+    Args:
+        file: Path to the metadata CSV file
+        separator: Column separator in the CSV file
+        filter_cell_subset: Whether to filter by cell subset type
+        subject_column: Name of the column containing subject IDs
+        disease_label_column: Name of the column containing disease labels
+        cell_subset_type: Type of cell subset to filter for
+        cell_subset_column: Name of the column containing cell subset information
+        disease_label: Specific disease label to encode as 1 (others as 0). 
+                      If None, keeps original labels.
+        
+    Returns:
+        Tuple of (subject_ids, labels) as pandas Series
+        
+    Raises:
+        ValueError: If required parameters are missing
+        
+    Examples:
+        >>> X, y = load_labels('metadata.csv', disease_label='AB')
+        >>> print(f"Loaded {len(X)} samples")
+    """
+    if file is None:
+        raise ValueError('Metadata file path must be provided')
+    
+    if subject_column is None or len(subject_column) == 0:
+        raise ValueError('Subject ID column must be provided for data splitting')
+    
+    if disease_label_column is None:
+        raise ValueError('Disease label column must be provided for classification')
+    
+    # Load metadata
+    df_sample = load_metadata(
+        file=file,
+        separator=separator,
+        filter_cell_subset=filter_cell_subset,
+        column_names=[subject_column],
+        disease_label_column=disease_label_column,
+        cell_subset_type=cell_subset_type,
+        cell_subset_column=cell_subset_column
+    )
+    
+    columns_to_select = [subject_column, disease_label_column]
+    
+    # Binary encoding if specific disease label provided
+    if isinstance(disease_label, str):
+        df_sample_for_splitting = (
+            df_sample
+            .select(columns_to_select)
+            .with_columns(
+                pl.when(pl.col(disease_label_column) == disease_label)
+                .then(1)
+                .otherwise(0)
+                .alias(disease_label_column)
+            )
+        )
+    else:
+        df_sample_for_splitting = df_sample.select(columns_to_select)
+    
+    df_sample_pd = df_sample_for_splitting.to_pandas()
+    
+    return df_sample_pd[subject_column], df_sample_pd[disease_label_column]
+
+def create_folds(
+    X: pd.Series,
+    y: pd.Series,
+    method: str = 'kfold',
+    n_splits: int = 5,
+    seed: int = 42,
+    test_size: float = 0.2
+) -> Tuple[List[List], List[List], List]:
+    """
+    Create train/validation/test splits with nested cross-validation.
+    
+    First splits data into train+validation and test sets.
+    Then creates k-fold splits within the train set for cross-validation.
+    
+    Args:
+        X: Subject IDs
+        y: Disease labels
+        method: Splitting method ('kfold' or 'stratified')
+        n_splits: Number of folds for k-fold cross-validation within training data
+        seed: Random seed for reproducibility
+        test_size: Proportion of full data reserved for final test set
+        
+    Returns:
+        Tuple of (train_folds, val_folds, test_set):
+        - train_folds: List of training subject ID lists (one per fold)
+        - val_folds: List of validation subject ID lists (one per fold)
+        - test_set: List of test subject IDs (held out from CV)
+    
+    Warning :
+        stratified method is not a good way of proceeding if the dataset is to small. It will indeed
+        create only one possible splitting
+    """
+    # First, split into train+val and test
+    if method == 'kfold' :
+        X_trainval, X_test, y_trainval, y_test = train_test_split(
+            X, y, 
+            test_size=test_size, 
+            random_state=seed, 
+        )
+    elif method == 'stratified':
+        X_trainval, X_test, y_trainval, y_test = train_test_split(
+            X, y, 
+            test_size=test_size, 
+            random_state=seed, 
+            stratify=y
+        )
+    
+    print("Train class distribution:")
+    print (f'0 : {len(y_trainval) - y_trainval.sum()}\n1 : {y_trainval.sum()}')
+    print("\nTest class distribution:")
+    print (f'0 : {len(y_test) - y_test.sum()}\n1 : {y_test.sum()}')
+        
+    train_folds = []
+    val_folds = []
+    
+    # Then create k-fold splits within the train+val set
+    if method == 'kfold':
+        kf = KFold(n_splits=n_splits, shuffle=True, random_state=seed)
+        splitter = kf.split(X_trainval)
+    elif method == 'stratified':
+        skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
+        splitter = skf.split(X_trainval, y_trainval)
+    else:
+        raise ValueError(f"Unknown method: {method}. Use 'kfold' or 'stratified'")
+    
+    # Create folds within training data
+    i = 0
+    fold_data = []
+
+    for train_idx, val_idx in splitter:
+        i += 1
+        train_folds.append(X_trainval.iloc[train_idx].tolist())
+        val_folds.append(X_trainval.iloc[val_idx].tolist())
+        
+        # Collect fold statistics
+        fold_data.append({
+            'Fold': i,
+            'Split': 'Train',
+            'Class 0': len(y_trainval.iloc[train_idx]) - y_trainval.iloc[train_idx].sum(),
+            'Class 1': y_trainval.iloc[train_idx].sum()
+        })
+        fold_data.append({
+            'Fold': i,
+            'Split': 'Validation',
+            'Class 0': len(y_trainval.iloc[val_idx]) - y_trainval.iloc[val_idx].sum(),
+            'Class 1': y_trainval.iloc[val_idx].sum()
+        })
+
+    # Create and display single comprehensive table
+    fold_df = pd.DataFrame(fold_data)
+    print("\nClass distribution across all folds:")
+    print(fold_df.to_string(index=False))
+    
+    return train_folds, val_folds, X_test.tolist()
+
+def load_tsv_files(
+    file_paths: Union[str, List[str]],
+    cdr3_column: str = 'aaSeqCDR3',
+    count_column: str = 'cloneCount',
+    v_gene_column: str = 'allVHitsWithScore',
+    j_gene_column: str = 'allJHitsWithScore',
+    min_cdr3_length: int = 6,
+    max_cdr3_length: int = 22,
+) -> pl.DataFrame:
+    """
+    Load and process TCR repertoire data from TSV files.
+        
+    Args:
+        file_paths: Path to single TSV file or list of paths to multiple TSV files
+        cdr3_column: Name of column containing CDR3 amino acid sequence
+        count_column: Name of column containing clone counts
+        v_gene_column: Name of column containing V gene information
+        j_gene_column: Name of column containing J gene information
+        min_cdr3_length: Minimum CDR3 length to include (inclusive, default: 6)
+        max_cdr3_length: Maximum CDR3 length to include (exclusive, default: 22)
+        
+    Returns:
+        Polars DataFrame with processed TCR sequences containing:
+        - cdr3aa: CDR3 amino acid sequence (always starts with C, ends with F)
+        - count: Clone count
+        - v_gene: V gene (optionally without allele)
+        - j_gene: J gene (optionally without allele)
+        - sample_id: Sample identifier extracted from file path
+        - cdr3Length: Length of CDR3 sequence
+        - clone: Unique clone identifier (v_gene_cdr3aa_j_gene)
+    """
+    
+    # Convert single path to list for consistent handling
+    if isinstance(file_paths, str):
+        file_paths = [file_paths]
+    
+    
+    # Start building the lazy query
+    query = (
+        pl.scan_csv(
+            file_paths,
+            separator="\t",
+            has_header=True,
+            include_file_paths="file_path"
+        )
+        .select([
+            cdr3_column,
+            count_column,
+            v_gene_column,
+            j_gene_column,
+            "file_path"
+        ])
+    )
+    
+    #remove TRAJ and at the same occasion all alpha chains
+    query = query.filter(~pl.col(j_gene_column).str.contains('A'))
+    
+    # Extract sample ID from file path
+    query = query.with_columns(
+        pl.col("file_path")
+        .str.extract(r"([^/]+)-prod\.tsv$", 1)
+        .alias("sample_id")
+    )
+    
+    # Rename columns to standard names
+    query = query.rename({
+        cdr3_column: "cdr3aa",
+        count_column: "count",
+        v_gene_column: "v_gene",
+        j_gene_column: "j_gene",
+    })
+    
+    # Remove allele information
+    query = query.with_columns([
+        pl.col("v_gene").str.replace(r"\*.*", ""),
+        pl.col("j_gene").str.replace(r"\*.*", ""),
+    ])
+    
+    # Add CDR3 length and create clone identifier
+    query = (
+        query
+        .with_columns(pl.col("cdr3aa").str.len_chars().alias("cdr3Length"))
+        .with_columns(
+            (pl.col("v_gene") + "_" + pl.col("cdr3aa") + "_" + pl.col("j_gene"))
+            .alias("clone")
+        )
+    )
+    
+    # Filter by CDR3 length
+    query = query.filter(
+        (pl.col('cdr3Length') >= min_cdr3_length) & 
+        (pl.col('cdr3Length') < max_cdr3_length)
+    )
+    
+    # Filter by CDR3 structure - MUST start with C and end with F
+    query = query.filter(
+        pl.col('cdr3aa').str.starts_with('C') & 
+        pl.col('cdr3aa').str.ends_with('F')
+    )
+    
+    # Select final columns and collect
+    df = query.select([
+        'cdr3aa', 'count', 'v_gene', 'j_gene', 
+        'sample_id', 'cdr3Length', 'clone'
+    ]).collect()
+    
+    return df
+
 def save_simple_dataframe(
     sample_list: List[str],
     metadata_df: pl.DataFrame,
@@ -192,7 +471,6 @@ def save_simple_dataframe(
     output_file = os.path.join(output_path, f'{output_suffix}.csv')
     df_combined.write_csv(file=output_file, separator=',', include_header=True)
     print(f"✓ Saved {len(df_combined)} records to {output_suffix}")
-
 
 # =============================================================================
 # MAIN EXECUTION - Modified to use config.yaml

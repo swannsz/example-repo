@@ -52,5 +52,5 @@ if __name__ == "__main__":
     dir_path = os.getcwd()
     number_gliph_folder = len(glob.glob(f'{dir_path}/gliph_fold_*'))
     
-    for i in range(number_gliph_folder) :
-        clean_gliph_data(f'gliph_fold_{i+1}_cluster', f'gliph_fold_{i+1}')
+    for fold in range(number_gliph_folder) :
+        clean_gliph_data(f'gliph_fold_{fold+1}_cluster', f'gliph_fold_{i+1}')
