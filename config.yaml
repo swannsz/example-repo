@@ -13,7 +13,7 @@ random_seed: 42
 # -----------------------------------------------------------------------------
 paths:
   metadata: "clean_metadata.csv"
-  gliph2_bin: "/mnt/mukkuri/RepSeq/RS_Tools/GLIPH2/irtools.centos"
+  gliph2_bin: "/shared/projects/airr_2025_ml_blosum/irtools.centos"
   output_dir: "results"
   
 # -----------------------------------------------------------------------------

@@ -1,0 +1,4 @@
+envs_dirs:
+  - /shared/projects/airr_2025_ml_blosum/conda/envs
+pkgs_dirs:
+  - /shared/projects/airr_2025_ml_blosum/conda/pkgs

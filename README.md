@@ -1,7 +1,7 @@
 # -EoI-classification
 classification workflow with tcrkit
 
-![pipeline complète](ml_strategie.png)
+![pipeline complète](./not%20used%20now/ml_strategie.png)
 
 Elements à garder consistant :
 nom des folders gliph

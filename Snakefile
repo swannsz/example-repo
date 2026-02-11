@@ -37,7 +37,7 @@ rule create_folders:
     - Generates GLIPH2 input files and config files in each folder
     """
     input:
-        script="create_files.py",
+        script="create_files_updated.py",
         metadata=METADATA_FILE,
         config_file="config.yaml"
     output:
@@ -87,7 +87,6 @@ rule run_gliph2_clustering:
         echo "Running GLIPH2 for fold {wildcards.fold}..." > "$log_abs"
         echo "Fold directory: {params.fold_dir}" >> "$log_abs"
         echo "Config file: {params.config_file}" >> "$log_abs"
-        echo "TCRkit condition: {TCRKIT_CONDITION}" >> "$log_abs"
         echo "Working directory will be: $(pwd)/{params.fold_dir}" >> "$log_abs"
         echo "" >> "$log_abs"
         
@@ -190,7 +189,7 @@ rule tcr_classification:
     Step 4: Run TCR motif classification
     """
     input:
-        script="tcr_motif_classification.py",
+        script="classif_updated.py",
         cleaned_flag="gliph_cleaning.done",
         clusters=expand("gliph_fold_{fold}_cluster_clean.csv", fold=FOLDS),
         train=expand("fold_train_{fold}.csv", fold=FOLDS),
