@@ -1,0 +1,94 @@
+# =============================================================================
+# Snakemake Configuration File for GLIPH2 TCR Analysis
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# General Settings
+# -----------------------------------------------------------------------------
+n_folds: 5
+random_seed: 42
+
+# -----------------------------------------------------------------------------
+# Input/Output Paths
+# -----------------------------------------------------------------------------
+paths:
+  metadata: "clean_metadata.csv"
+  gliph2_bin: "/mnt/mukkuri/RepSeq/RS_Tools/GLIPH2/irtools.centos"
+  output_dir: "results"
+  
+# -----------------------------------------------------------------------------
+# Metadata Parameters (for create_files.py)
+# -----------------------------------------------------------------------------
+metadata:
+  separator: ","
+  filter_cell_subset: true
+  column_names:
+    - "subject_id"
+    - "visit"
+    - "child_id"
+    - "aligned_files"
+  disease_label_column: "seroconversion"
+  cell_subset_type: "CD8"
+  cell_subset_column: "cell_subset"
+  subject_column: "subject_id"
+
+# -----------------------------------------------------------------------------
+# Cross-validation Parameters
+# -----------------------------------------------------------------------------
+cross_validation:
+  strategy: "kfold"  # Options: "kfold", "stratified"
+  test_size: 0.2
+  shuffle: true
+
+# -----------------------------------------------------------------------------
+# TCRkit Parameters (for loading repertoires)
+# -----------------------------------------------------------------------------
+tcrkit:
+  condition: "diabetes"
+  chain: "TRB"
+  format: "mixcr"
+  name: "T1D_ELICIT_TEST"
+  filepath_column: "aligned_files"
+  seropositive_label: "AB"
+  seronegative_label: "AB-"
+  data_name: "diabetic"
+  reference_name: "healthy"
+  cache:
+    dir: "cache"
+    max_size_gb: 30
+    max_age_days: 140
+    cleanup_on_startup: false
+
+# -----------------------------------------------------------------------------
+# GLIPH2 Parameters
+# -----------------------------------------------------------------------------
+gliph2:
+  threshold_pvalue: 0.01
+  min_cluster_size: 3
+  reference_mode: "other_sample"
+
+# -----------------------------------------------------------------------------
+# Classification Parameters (for tcr_motif_classification.py)
+# -----------------------------------------------------------------------------
+classification:
+  motif_selection_threshold: 2
+  min_feature_prevalence: 0.01
+  max_feature_prevalence: 0.99
+  standardize_features: true
+  
+# -----------------------------------------------------------------------------
+# Computational Resources
+# -----------------------------------------------------------------------------
+resources:
+  threads:
+    default: 1
+    gliph2: 1
+    classification: 4
+  memory:
+    default: "4G"
+    gliph2: "8G"
+    classification: "16G"
+  time:
+    default: "1:00:00"
+    gliph2: "24:00:00"
+    classification: "4:00:00"
