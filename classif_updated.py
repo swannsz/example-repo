@@ -40,7 +40,7 @@ def set_config_globals(config: dict):
     """Set global configuration variables from config dict"""
     global N_FOLDS, GLIPH_THRESHOLD_PVALUE, MIN_CLUSTER_SIZE
     global MOTIF_SELECTION_THRESHOLD, MIN_FEATURE_PREVALENCE
-    global MAX_FEATURE_PREVALENCE, STANDARDIZE_FEATURES
+    global MAX_FEATURE_PREVALENCE, STANDARDIZE_FEATURES, OUTPUT_PREFIX
     
     N_FOLDS = config['n_folds']
     GLIPH_THRESHOLD_PVALUE = config['gliph2']['threshold_pvalue']
@@ -49,7 +49,7 @@ def set_config_globals(config: dict):
     MIN_FEATURE_PREVALENCE = config['classification']['min_feature_prevalence']
     MAX_FEATURE_PREVALENCE = config['classification']['max_feature_prevalence']
     STANDARDIZE_FEATURES = config['classification']['standardize_features']
-
+    OUTPUT_PREFIX = config["tcrkit"]["output_prefix"]
 # =============================================================================
 # EXISTING FUNCTIONS (keep as they are)
 # =============================================================================
@@ -69,7 +69,7 @@ def load_data():
         fold_val_files.append(val_file)
         
         # set the number of train files
-        clust_file = f'fold_train_{fold+1}_cluster_clean.csv'
+        clust_file = f'{OUTPUT_PREFIX}_{fold+1}_cluster_clean.csv'
         gliph_files.append(clust_file)
     
     # Load fold data

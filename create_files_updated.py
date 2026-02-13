@@ -665,14 +665,14 @@ if __name__ == "__main__":
     print("Creating GLIPH2 reference files and folders")
     print("="*70)
     
-    for i in range(1, N_FOLDS+1):
+    for i in range(len(trains)):
         fold_output_dir = f"./gliph_fold_{i+1}"
         print(f"\nCreating GLIPH2 files for fold {i+1} in {fold_output_dir}...")
         
         # This creates the gliph_fold_X directory AND the GLIPH2 input files!
         gliph_seropositive = seropositive[i].to_gliph(
             output=fold_output_dir,
-            output_prefix = f'{TCRKIT_PREFIX}_1',
+            name = f'{TCRKIT_PREFIX}_{i+1}',
             condition=TCRKIT_CONDITION,
             reference_mode="other_sample",
             reference_data=seronegative[i],

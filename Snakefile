@@ -154,10 +154,10 @@ rule aggregate_gliph_clusters:
 
 rule clean_gliph_data:
     input:
-        script="clean_gliph_data.py",
+        script="clean_gliph_data.py",   
         all_clusters="all_gliph_clustering.done"
     output:
-        cleaned_files=expand(f"{OUTPUT_PREFIX}" + "_{fold}/" + f"{OUTPUT_PREFIX}" + "_{fold}_cluster_clean.csv", fold=FOLDS),
+        cleaned_files=expand(f"{OUTPUT_PREFIX}" + "_{fold}_cluster_clean.csv", fold=FOLDS),
         done_marker=touch("gliph_cleaning.done")
     log:
         "logs/clean_gliph_data.log"
@@ -171,7 +171,7 @@ rule tcr_classification:
     input:
         script="classif_updated.py",
         cleaned_flag="gliph_cleaning.done",
-        clusters=expand(f"{OUTPUT_PREFIX}" + "_{fold}/" + f"{OUTPUT_PREFIX}" + "_{fold}_cluster_clean.csv", fold=FOLDS),
+        clusters=expand(f"{OUTPUT_PREFIX}" + "_{fold}_cluster_clean.csv", fold=FOLDS),
         train=expand("fold_train_{fold}.csv", fold=FOLDS),
         val=expand("fold_val_{fold}.csv", fold=FOLDS),
         test="test_data.csv",
@@ -189,7 +189,6 @@ rule tcr_classification:
         """
         python {input.script} --config {params.config_path} > {log} 2>&1
         """
-
 # =============================================================================
 # UTILITY RULES
 # =============================================================================
