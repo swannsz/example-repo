@@ -21,7 +21,6 @@ def clean_gliph_data(gliph_name: str, file_dir: Optional[str] = None):
         gliph_file_clean = f"{gliph_name}_clean.csv"
     else:
         gliph_file_base = os.path.join(file_dir, f"{gliph_name}.csv")
-        gliph_file_clean = os.path.join(file_dir, f"{gliph_name}_clean.csv")
 
     # Load original file
     gliph_base = pd.read_csv(
