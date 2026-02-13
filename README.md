@@ -8,8 +8,8 @@ This Snakemake workflow automates the complete GLIPH2 TCR clustering and motif c
 
 1. **Create folders** (`create_files_updated.py`): Generates analysis folders for each fold
 2. **Clean GLIPH2 config file** (`clean_gliph_config.py`): Remove in each folders created by (1.) the folder name for each `{file}.txt`. _It exist because of the rep.to_gliph() function of tcrkit, the final goal is to remove it_
-3. **Run GLIPH2**: Executes GLIPH2 clustering in each folder
-4. **Clean data** (`clean_gliph_data.py`): Cleans cluster CSV files _If csv files are too bigs there is problems when opening them, using this file permit to suppress the unnecessaries spaces and make the csv file readable_
+3. **Run GLIPH2**: Executes GLIPH2 clustering in each folder (every clustering are done in parallele)
+4. **Clean data** (`clean_gliph_data.py`): Cleans cluster CSV files _If csv files are too bigs there is problems when opening them, using this `clean_gliph_data.py` permit to suppress the unnecessaries spaces and make the csv file readable_
 5. **Classification** (`classif_updated.py`): Performs final classification
 
 ## Prerequisites
@@ -36,19 +36,21 @@ Ensure these files are in your working directory:
 - `clean_metadata.csv`
 - `Snakefile`
 - `config.yaml`
+- `classification.sbatch` (optional)
+_You can change the name of the {file}.py and of the metadata file if you want but you need to change them to in the `config.yaml`.
 
 ## Configuration
 
 Edit the `config.yaml` to set:
 - `N_FOLDS`: Number of cross-validation folds (default: 5)
-- `GLIPH2_PATH`: Path to your GLIPH2 installation
+- `GLIPH2_PATH`: Path to your file to compute GLIPH2 (in the `config.yaml` it's using a `irtools.centos` file)
 - `METADATA_FILE`: Path to your metadata file
-- and a lot of other parameters
+- and a lot of other parameters (add a more precise description)
 
 ## Usage
 
 ### If you use SLURM
-adapt the classification.sbatch file to your needs
+adapt the `classification.sbatch` file to your needs
 ```bash
 sbatch classification.sbatch
 ```
