@@ -7,7 +7,7 @@ This Snakemake workflow automates the complete GLIPH2 TCR clustering and motif c
 ## Workflow Steps
 
 1. **Create folders** (`create_files_updated.py`): Generates analysis folders for each fold
-2. **Clean GLIPH2 config file** (`clean_gliph_config.py`): Remove in each folders created by (1.) the folder name for each {file}.txt. _It exist because of the rep.to_gliph() function of tcrkit, the final goal is to remove it_
+2. **Clean GLIPH2 config file** (`clean_gliph_config.py`): Remove in each folders created by (1.) the folder name for each `{file}.txt`. _It exist because of the rep.to_gliph() function of tcrkit, the final goal is to remove it_
 3. **Run GLIPH2**: Executes GLIPH2 clustering in each folder
 4. **Clean data** (`clean_gliph_data.py`): Cleans cluster CSV files _If csv files are too bigs there is problems when opening them, using this file permit to suppress the unnecessaries spaces and make the csv file readable_
 5. **Classification** (`classif_updated.py`): Performs final classification
@@ -119,6 +119,12 @@ All logs are stored in `logs/` directory:
 - `logs/tcr_classification.log`
 
 ### Check out or err files (if using the classification.sbatch)
+
+### If .err file is telling you that an other snakemake is working in this directory 
+```bash
+conda activate tcrkit
+snakemake --unlock
+```
 
 ### Force re-run specific rule
 ```bash
