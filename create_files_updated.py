@@ -513,6 +513,7 @@ if __name__ == "__main__":
         TCRKIT_CHAIN = config.get('tcrkit', {}).get('chain', 'TRB')
         TCRKIT_FORMAT = config.get('tcrkit', {}).get('format', 'mixcr')
         TCRKIT_NAME = config.get('tcrkit', {}).get('name', 'T1D_ELICIT_TEST')
+        TCRKIT_PREFIX = config.get('tcrkit', {}).get('output_prefix', 'gliph_fold')
         
         print("\n" + "="*70)
         print("Configuration Summary")
@@ -540,6 +541,7 @@ if __name__ == "__main__":
         TCRKIT_CHAIN = 'TRB'
         TCRKIT_FORMAT = 'mixcr'
         TCRKIT_NAME = 'T1D_ELICIT_TEST'
+        TCRKIT_PREFIX = 'gliph_fold'
     
     # =================================================================
     # STEP 1: Load labels for splitting
@@ -663,17 +665,18 @@ if __name__ == "__main__":
     print("Creating GLIPH2 reference files and folders")
     print("="*70)
     
-    for i in range(len(trains)):
+    for i in range(1, N_FOLDS+1):
         fold_output_dir = f"./gliph_fold_{i+1}"
         print(f"\nCreating GLIPH2 files for fold {i+1} in {fold_output_dir}...")
         
         # This creates the gliph_fold_X directory AND the GLIPH2 input files!
         gliph_seropositive = seropositive[i].to_gliph(
             output=fold_output_dir,
+            output_prefix = f'{TCRKIT_PREFIX}_1',
             condition=TCRKIT_CONDITION,
             reference_mode="other_sample",
             reference_data=seronegative[i],
-            data_name="diabetic",
+            data_name=TCRKIT_CONDITION,
             reference_name="healthy"
         )
         

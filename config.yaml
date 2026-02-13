@@ -46,6 +46,7 @@ cross_validation:
 tcrkit:
   condition: "diabetes"
   chain: "TRB"
+  output_prefix: "gliph_fold"
   format: "mixcr"
   name: "T1D_ELICIT_TEST"
   filepath_column: "aligned_files"

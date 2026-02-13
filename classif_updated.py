@@ -58,30 +58,19 @@ def load_data():
     """Load all data files with error handling."""
     print("Loading data files...")
     
-    # File paths (fixed spacing issues)
-    fold_train_files = [
-        'fold_train_1.csv',
-        'fold_train_2.csv',
-        'fold_train_3.csv',
-        'fold_train_4.csv',
-        'fold_train_5.csv'
-    ]
-    
-    fold_val_files = [
-        'fold_val_1.csv',
-        'fold_val_2.csv',
-        'fold_val_3.csv',
-        'fold_val_4.csv',
-        'fold_val_5.csv'
-    ]
-    
-    gliph_files = [
-        'fold_train_1_cluster_clean.csv',
-        'fold_train_2_cluster_clean.csv',
-        'fold_train_3_cluster_clean.csv',
-        'fold_train_4_cluster_clean.csv',
-        'fold_train_5_cluster_clean.csv'
-    ]
+    fold_train_files, fold_val_files, gliph_files = [], [], []
+    for fold in range(N_FOLDS) :
+        # set the number of train files
+        train_file = f'fold_train_{fold+1}.csv'
+        fold_train_files.append(train_file)
+        
+        # set the number of validation files
+        val_file = f'fold_val_{fold+1}.csv'
+        fold_val_files.append(val_file)
+        
+        # set the number of train files
+        clust_file = f'fold_train_{fold+1}_cluster_clean.csv'
+        gliph_files.append(clust_file)
     
     # Load fold data
     try:
@@ -460,11 +449,16 @@ def filter_features_by_prevalence(X, min_prev=0.01, max_prev=0.99):
     return X[keep_features], list(removed_features)
 
 
-def select_motifs_across_folds(fold_train_data, fold_val_data, fold_motifs, n_folds=5):
+def select_motifs_across_folds(fold_train_data,
+                               fold_val_data,
+                               fold_motifs,
+                               n_folds=5,motif_threshold=None,):
     """
     Select motifs based on cross-validation performance.
     Includes feature standardization. 
     """
+    if motif_threshold is None:
+        motif_threshold = MOTIF_SELECTION_THRESHOLD
     # Track motif performance across folds
     motif_coefficients = defaultdict(list)
     motif_appears_in_folds = defaultdict(int)
@@ -993,12 +987,8 @@ def main():
             print("\n⚠ WARNING: No motifs passed selection criteria!")
             print("Relaxing thresholds and retrying...")
             
-            global MOTIF_SELECTION_THRESHOLD, PERFORMANCE_THRESHOLD_AUC
-            MOTIF_SELECTION_THRESHOLD = 1
-            PERFORMANCE_THRESHOLD_AUC = 0.55
-            
             selected_motifs, motif_scores = select_motifs_across_folds(
-                fold_train_data, fold_val_data, fold_motifs, n_folds=N_FOLDS
+                fold_train_data, fold_val_data, fold_motifs, n_folds=N_FOLDS, motif_threshold=1
             )
         
         if len(selected_motifs) == 0:

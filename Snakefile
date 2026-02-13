@@ -75,7 +75,7 @@ rule clean_gliph_configs:
         """
         python {input.script} --fold {params.fold} --condition {params.condition} > {log} 2>&1
         """
-
+    
 rule run_gliph2_clustering:
     """
     Step 2: Run GLIPH2 clustering in each fold directory
@@ -88,13 +88,17 @@ rule run_gliph2_clustering:
     """
     input:
         folder_marker="folders_created.done",
-        config_cleaned="gliph_fold_{fold}/config_cleaned_{fold}.done"  # NEW: depends on cleaned config
+        config_cleaned="gliph_fold_{fold}/config_cleaned_{fold}.done"
     output:
-        cluster="gliph_fold_{fold}/gliph_fold_{fold}_cluster.csv"
+        cluster=lambda wildcards: (
+            f"gliph_fold_{wildcards.fold}/"
+            f"{config['tcrkit']['output_prefix']}_{wildcards.fold}_cluster.csv"
+        )
     params:
         fold_dir="gliph_fold_{fold}",
-        gliph_path=lambda wildcards: os.path.abspath(GLIPH2_PATH),  # Absolute path
-        config_file=f"gliph_config_{TCRKIT_CONDITION}.cfg"  # Dynamic config filename
+        gliph_path=lambda wildcards: os.path.abspath(GLIPH2_PATH),
+        config_file=f"gliph_config_{TCRKIT_CONDITION}.cfg",
+        gliph_name=lambda wildcards: f"{config['tcrkit']['output_prefix']}_{wildcards.fold}"
     log:
         "logs/gliph2_fold_{fold}.log"
     threads: config["resources"]["threads"]["gliph2"]
@@ -129,7 +133,6 @@ rule run_gliph2_clustering:
         echo "" >> "$log_abs"
         
         # Run GLIPH2 from inside the fold directory
-        # -c flag specifies the config file
         echo "Executing: {params.gliph_path} -c {params.config_file}" >> "$log_abs"
         {params.gliph_path} -c {params.config_file} >> "$log_abs" 2>&1
         
@@ -141,17 +144,16 @@ rule run_gliph2_clustering:
             exit $exit_code
         fi
         
-        # Check if output was created
-        if [ ! -f "gliph_fold_{wildcards.fold}_cluster.csv" ]; then
-            echo "ERROR: GLIPH2 did not create expected output file" >> "$log_abs"
-            echo "Files created:" >> "$log_abs"
+        # Verify expected GLIPH2 output exists
+        if [ ! -f "{params.gliph_name}_cluster.csv" ]; then
+            echo "ERROR: GLIPH2 did not create expected output file: {params.gliph_name}_cluster.csv" >> "$log_abs"
             ls -la >> "$log_abs"
             exit 1
         fi
         
         echo "" >> "$log_abs"
         echo "✓ GLIPH2 completed successfully for fold {wildcards.fold}" >> "$log_abs"
-        echo "Output file: gliph_fold_{wildcards.fold}_cluster.csv" >> "$log_abs"
+        echo "Output file: {params.gliph_name}_cluster.csv" >> "$log_abs"
         """
 
 rule aggregate_gliph_clusters:
