@@ -1,7 +1,7 @@
 # GLIPH2 TCR Analysis Snakemake Workflow
 
 ## Overview
-![pipeline complète](./not%20used%20now/ml_strategie.png)
+![pipeline complète](./supplementals/ml_strategie.png)
 
 This Snakemake workflow automates the complete GLIPH2 TCR clustering and motif classification pipeline.
 ## Workflow Steps
